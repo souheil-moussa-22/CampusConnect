@@ -1,0 +1,481 @@
+# ROLE & OBJECTIVE
+
+Act as a Senior Full-Stack Software Architect and React/Next.js Engineer.
+
+You are working on a university project called **CampusConnect – Student Help & Knowledge Sharing Platform**.
+
+Your mission is to analyze, design, implement, test, and document a complete, professional, maintainable web application that strictly respects the university requirements.
+
+Do not build a generic CRUD application. Implement the actual business workflows, authorization rules, data persistence, and user experience described below.
+
+# 1. FIRST: ANALYZE THE EXISTING REPOSITORY
+
+Before writing or modifying any code:
+
+1. Inspect the complete repository structure.
+2. Identify the current framework, Next.js version, React version, programming language, styling solution, dependencies, and existing architecture.
+3. Identify existing pages, components, layouts, hooks, API routes, database configuration, models, and authentication mechanisms.
+4. Identify incomplete implementations, duplicated code, technical debt, and missing functionality.
+5. Check whether the project already has a backend or whether Next.js should handle the server-side logic.
+6. Identify existing conventions and preserve working implementations whenever possible.
+
+Do not blindly replace existing files or introduce a second architecture.
+
+After analysis, provide:
+- Current architecture overview.
+- Existing functionality.
+- Missing functionality.
+- Technical problems.
+- Recommended architecture.
+- Proposed database schema.
+- Implementation roadmap divided into phases.
+
+**Important:** Do not start implementing until you have presented the analysis and proposed architecture.
+
+# 2. PROJECT DESCRIPTION
+
+CampusConnect is a platform that allows university students to help each other, share their skills, and organize revision sessions.
+
+The main workflow:
+
+1. A student creates an account and completes their profile.
+2. A student publishes a help request.
+3. Other students discover the request through search and filters.
+4. An interested student submits a help proposal.
+5. The request author accepts or rejects the proposal.
+6. The students organize their revision session.
+7. The request is marked as completed.
+8. Eligible participants can submit evaluations.
+
+# 3. TECHNOLOGY REQUIREMENTS
+
+Use React through Next.js.
+
+Prefer the following architecture if the existing repository does not impose different technical choices:
+
+- Next.js App Router.
+- React.
+- TypeScript with strict mode.
+- Tailwind CSS.
+- Reusable and modular components.
+- PostgreSQL as the relational database.
+- Prisma ORM.
+- Secure authentication and session management.
+- Server-side authorization and validation.
+- REST API routes or Server Actions, chosen consistently.
+- Zod for schema validation.
+
+Before selecting authentication and database libraries, verify compatibility with the existing project and explain your choices.
+
+Avoid unnecessary dependencies and unnecessary complexity.
+
+# 4. FUNCTIONAL REQUIREMENTS
+
+## A. Authentication
+
+Implement:
+
+- Student registration.
+- Login and logout.
+- Secure password hashing.
+- Session management.
+- Protected routes.
+- Proper authentication error handling.
+
+Roles:
+
+- STUDENT
+- ADMIN
+
+A student must not access administrative functionality.
+
+## B. Student Profile
+
+Each student profile must contain:
+
+- Full name.
+- Email.
+- University specialty.
+- Academic level.
+- Skills.
+- Profile description.
+- Optional profile picture.
+
+Allow students to view and update their profiles.
+
+## C. Help Requests
+
+Students must be able to:
+
+- Create a help request.
+- View request details.
+- Edit their own requests.
+- Delete or close their own requests when permitted.
+- View their published requests.
+
+Each request must contain:
+
+- Title.
+- Description.
+- Subject.
+- Academic level.
+- Availability.
+- Creation date.
+- Author.
+- Current status.
+
+Request statuses:
+
+- OPEN
+- ACCEPTED
+- COMPLETED
+
+## D. Search and Filtering
+
+Implement a functional search interface.
+
+Allow students to filter requests by:
+
+- Subject.
+- Academic level.
+- Status.
+
+Include:
+- Search by title.
+- Pagination.
+- Loading states.
+- Empty states.
+- Error states.
+
+Filters must work with real database data, not hardcoded mock data.
+
+## E. Help Proposals
+
+Students must be able to propose their help on another student's request.
+
+A proposal should contain:
+
+- Student who submitted the proposal.
+- Associated help request.
+- Message.
+- Submission date.
+- Proposal status.
+
+Proposal statuses:
+
+- PENDING
+- ACCEPTED
+- REJECTED
+
+The request author can accept or reject proposals.
+
+Students cannot submit proposals on their own requests.
+
+## F. Request Lifecycle and Business Rules
+
+Implement the following lifecycle:
+
+OPEN → ACCEPTED → COMPLETED
+
+Enforce these rules on the server:
+
+1. Only the request author can modify their request.
+2. Only the request author can accept or reject proposals.
+3. Students cannot accept their own proposals.
+4. A closed or completed request cannot receive new proposals.
+5. Prevent multiple accepted proposals if the application uses one-to-one help sessions.
+6. When a proposal is accepted, update the associated request status.
+7. Rejected proposals must not change the request status.
+8. Only authorized participants can access the corresponding session.
+9. Evaluations are allowed only after the request is completed.
+10. Only session participants can submit evaluations.
+11. Prevent duplicate evaluations by the same participant for the same session.
+12. Validate all state transitions on the server.
+
+Use database transactions where multiple related records must be updated together.
+
+Do not rely on frontend button visibility for security.
+
+## G. Evaluations
+
+After a completed session, eligible participants can:
+
+- Rate the other participant.
+- Submit a written comment.
+- View received evaluations.
+
+Implement rating validation and prevent unauthorized or duplicate submissions.
+
+## H. Personal Dashboard
+
+Create a dashboard containing:
+
+- Number of published requests.
+- Number of help proposals submitted.
+- Pending proposals received.
+- Accepted proposals.
+- Completed sessions.
+- Recent activities.
+
+Display real information retrieved from the database.
+
+## I. Administration
+
+Create a protected administration area.
+
+Administrators must be able to:
+
+- View reported publications.
+- Review reported content.
+- Remove inappropriate publications.
+- Resolve reports.
+- View relevant report details.
+
+Regular students must never access these operations.
+
+# 5. ORIGINAL FEATURE: SMART MATCH
+
+Implement an original feature called **Smart Match**.
+
+Its objective is to recommend students who may be able to help with a particular request.
+
+Calculate a matching score based on:
+
+- Matching skills.
+- Matching specialty.
+- Academic level compatibility.
+- Subject relevance.
+- Availability compatibility.
+
+Display recommended students with:
+- Profile information.
+- Relevant skills.
+- Matching score.
+- A short explanation of why they are recommended.
+
+Start with a transparent rule-based scoring algorithm. Keep the recommendation logic isolated in a reusable service so it can be improved later.
+
+Do not invent student information or use hardcoded recommendations.
+
+# 6. DATABASE DESIGN
+
+Propose and implement a normalized relational database schema.
+
+Consider these entities:
+
+- User
+- StudentProfile
+- Skill
+- HelpRequest
+- HelpProposal
+- Session
+- Evaluation
+- Report
+
+Define:
+- Primary keys.
+- Foreign keys.
+- Relationships.
+- Unique constraints.
+- Required fields.
+- Appropriate indexes.
+- Creation and update timestamps.
+
+Pay particular attention to relationships between request authors, proposal authors, accepted proposals, sessions, and evaluations.
+
+Explain the database relationships before implementing migrations.
+
+# 7. FRONTEND DESIGN REQUIREMENTS
+
+Build a modern, professional university platform.
+
+Design direction:
+
+- Clean and modern interface.
+- Consistent typography.
+- Well-defined spacing.
+- Professional color palette.
+- Reusable UI components.
+- Responsive layouts.
+- Accessible forms and navigation.
+- Clear visual hierarchy.
+- Consistent buttons, cards, badges, dialogs, and notifications.
+
+Required pages:
+
+1. Landing page.
+2. Registration page.
+3. Login page.
+4. Student dashboard.
+5. Student profile.
+6. Browse help requests.
+7. Help request details.
+8. Create help request.
+9. Edit help request.
+10. My requests.
+11. My submitted proposals.
+12. Received proposals.
+13. Session details.
+14. Evaluations.
+15. Admin dashboard.
+16. Report management.
+
+Use reusable components instead of duplicating UI code.
+
+Every page must properly handle:
+- Loading.
+- Errors.
+- Empty data.
+- Successful actions.
+- Unauthorized access.
+
+Do not use mock data as a substitute for backend functionality.
+
+# 8. SECURITY AND VALIDATION
+
+Implement:
+
+- Server-side authentication checks.
+- Role-based authorization.
+- Resource ownership checks.
+- Server-side input validation.
+- Client-side input validation.
+- Secure password storage.
+- Protection against unauthorized modifications.
+- Safe error responses.
+- Environment variables for secrets.
+- Proper database constraints.
+
+Never expose sensitive information or credentials in frontend code.
+
+# 9. CODE QUALITY
+
+Follow these engineering principles:
+
+- SOLID principles where appropriate.
+- Separation of concerns.
+- Reusable components.
+- Small, focused functions.
+- Clear naming conventions.
+- Type-safe implementations.
+- Centralized error handling.
+- Consistent API response structures.
+- No unnecessary code duplication.
+- No unused dependencies.
+- No unnecessary console.log statements.
+- No fake implementations or placeholder business logic.
+
+Avoid putting business logic directly inside UI components.
+
+# 10. IMPLEMENTATION ROADMAP
+
+Implement the application progressively.
+
+**Phase 1 – Project foundation**
+- Repository analysis.
+- Architecture.
+- Database design.
+- Project structure.
+- Environment configuration.
+
+**Phase 2 – Authentication and profiles**
+- Registration.
+- Login/logout.
+- Session management.
+- Role-based authorization.
+- Student profiles.
+
+**Phase 3 – Help requests**
+- CRUD operations.
+- Request details.
+- Search and filtering.
+- Pagination.
+
+**Phase 4 – Help proposals**
+- Submit proposals.
+- Accept/reject proposals.
+- Request lifecycle.
+- Server-side business rules.
+
+**Phase 5 – Sessions and evaluations**
+- Session management.
+- Completion workflow.
+- Participant evaluations.
+
+**Phase 6 – Dashboard and administration**
+- Student dashboard.
+- Statistics.
+- Reports.
+- Admin operations.
+
+**Phase 7 – Smart Match**
+- Matching algorithm.
+- Recommendations.
+- Matching explanations.
+
+**Phase 8 – Quality and delivery**
+- Testing.
+- Responsive improvements.
+- Security verification.
+- Error handling.
+- README.
+- Deployment preparation.
+
+# 11. TESTING REQUIREMENTS
+
+Create tests for critical business rules.
+
+At minimum, verify:
+
+- Student registration and login.
+- Unauthorized access rejection.
+- Request ownership.
+- Proposal submission.
+- Proposal acceptance and rejection.
+- Preventing proposals on completed requests.
+- Correct request status transitions.
+- Evaluation eligibility.
+- Duplicate evaluation prevention.
+- Admin-only operations.
+
+Test both successful and forbidden scenarios.
+
+# 12. GIT AND DOCUMENTATION
+
+Maintain a clean Git workflow.
+
+Use meaningful commits organized by functionality.
+
+Generate a professional README containing:
+
+- Project overview.
+- Main features.
+- Technology stack.
+- Architecture.
+- Database setup.
+- Installation instructions.
+- Environment variables.
+- Database migrations.
+- Development commands.
+- Test commands.
+- Demo accounts.
+- Known limitations.
+
+Never invent credentials for demo accounts. Document them only after creating and verifying the accounts.
+
+# 13. HOW YOU MUST WORK
+
+Follow these rules throughout development:
+
+1. Work with the existing repository rather than rebuilding blindly.
+2. Respect the project requirements and business rules.
+3. Never implement all modules in one huge operation.
+4. Work phase by phase.
+5. Before modifying files, explain the changes and their purpose.
+6. After each phase, summarize created and modified files.
+7. Run relevant checks and tests.
+8. Fix errors before moving to the next phase.
+9. Do not claim that a feature is complete without verifying it.
+10. Ask for clarification only when an important requirement is genuinely ambiguous.
+11. Keep the architecture simple enough for university students to understand and defend individually.
+12. Do not silently omit mandatory functionality.
