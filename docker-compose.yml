@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    container_name: campusconnect-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-campusconnect}
+      POSTGRES_USER: ${POSTGRES_USER:-campusconnect_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    ports:
+      - "5433:5432"
+    volumes:
+      - campusconnect-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  campusconnect-postgres-data:
