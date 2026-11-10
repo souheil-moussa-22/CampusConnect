@@ -50,9 +50,15 @@ The schema contains `users`, `student_profiles`, `skills`, `student_profile_skil
 
 Native SQL services are in `src/services`, database access is in `src/lib/db`, and Zod validators are in `src/validators`. Proposal acceptance uses a transaction and `FOR UPDATE` locking on the request, preventing concurrent acceptance of multiple proposals for one request.
 
-## Development account
+## Authentication and profiles
 
-There is no registration UI or authentication/session implementation yet. When the auth flow is added, it should validate registration input with `createUserSchema` and call `createUser`, which hashes passwords with bcrypt before inserting them. Never insert a plain-text password or expose `password_hash` in an API response.
+Authentication uses Auth.js/NextAuth with the Credentials Provider and JWT sessions. `src/auth.ts` validates credentials with Zod, loads users through the existing `pg` services, compares bcrypt hashes, and places only the user ID, email, name, and role in the JWT/session. The database is not used as an Auth.js adapter.
+
+Copy `.env.example` to `.env` and set `DATABASE_URL`, `AUTH_SECRET` (or `NEXTAUTH_SECRET`), and `NEXTAUTH_URL`. Public registration is `POST /api/register`; it always creates a `STUDENT` and inserts `users` plus `student_profiles` in one PostgreSQL transaction. Login/logout use Auth.js endpoints and `signIn`/`signOut`. `/api/profile` supports authenticated student `GET` and `PATCH` operations; ownership comes from the verified session, never from request data.
+
+Server operations use `getCurrentUser`, `requireAuth`, `requireRole`, and `requireStudent` from `src/lib/auth/permissions.ts`. Middleware provides page redirects for `/profile`, `/dashboard`, `/login`, and `/register`, but every API operation also checks authentication and role server-side.
+
+To test manually, start PostgreSQL, apply migrations, run `npm run dev`, register at `/register`, log in at `/login`, and update `/profile`. Automated checks are `npm run typecheck` and `npm run build`.
 
 ## Security notes
 

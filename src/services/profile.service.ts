@@ -12,11 +12,15 @@ export type StudentProfile = {
   availability: string | null;
   created_at: Date;
   updated_at: Date;
+  email: string;
 };
 
 export async function getStudentProfile(userId: string): Promise<StudentProfile | null> {
   const result = await query<StudentProfile>(
-    "SELECT * FROM student_profiles WHERE user_id = $1",
+    `SELECT sp.*, u.email
+     FROM student_profiles sp
+     JOIN users u ON u.id = sp.user_id
+     WHERE sp.user_id = $1`,
     [userId]
   );
   return result.rows[0] ?? null;
@@ -27,17 +31,22 @@ export async function updateStudentProfile(
   input: Pick<StudentProfile, "full_name" | "specialty" | "academic_level" | "bio" | "availability">
 ): Promise<StudentProfile> {
   const result = await query<StudentProfile>(
-    `INSERT INTO student_profiles
-       (user_id, full_name, specialty, academic_level, bio, availability)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (user_id) DO UPDATE SET
-       full_name = EXCLUDED.full_name,
-       specialty = EXCLUDED.specialty,
-       academic_level = EXCLUDED.academic_level,
-       bio = EXCLUDED.bio,
-       availability = EXCLUDED.availability,
-       updated_at = NOW()
-     RETURNING *`,
+    `WITH updated AS (
+       INSERT INTO student_profiles
+         (user_id, full_name, specialty, academic_level, bio, availability)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (user_id) DO UPDATE SET
+         full_name = EXCLUDED.full_name,
+         specialty = EXCLUDED.specialty,
+         academic_level = EXCLUDED.academic_level,
+         bio = EXCLUDED.bio,
+         availability = EXCLUDED.availability,
+         updated_at = NOW()
+       RETURNING *
+     )
+     SELECT updated.*, u.email
+     FROM updated
+     JOIN users u ON u.id = updated.user_id`,
     [
       userId,
       input.full_name,
