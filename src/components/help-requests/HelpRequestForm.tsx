@@ -51,14 +51,16 @@ export function HelpRequestForm({
   }
 
   return (
-    <form onSubmit={submit}>
-      <label>Title<input value={values.title} maxLength={200} onChange={(event) => update("title", event.target.value)} /></label>
-      <label>Description<textarea value={values.description} maxLength={5000} onChange={(event) => update("description", event.target.value)} /></label>
-      <label>Subject<input value={values.subject} maxLength={100} onChange={(event) => update("subject", event.target.value)} /></label>
-      <label>Academic level<input value={values.academicLevel} maxLength={100} onChange={(event) => update("academicLevel", event.target.value)} /></label>
-      <label>Availability<textarea value={values.availability} maxLength={1000} onChange={(event) => update("availability", event.target.value)} /></label>
-      {error && <p role="alert">{error}</p>}
-      <button disabled={saving}>{saving ? "Saving..." : submitLabel}</button>
+    <form className="form-stack" onSubmit={submit}>
+      <div className="form-grid">
+        <label className="field full">Title<input value={values.title} maxLength={200} onChange={(event) => update("title", event.target.value)} placeholder="e.g. Need help with calculus integration" /></label>
+        <label className="field full">Description<textarea value={values.description} maxLength={5000} onChange={(event) => update("description", event.target.value)} placeholder="Describe what you need help with..." /></label>
+        <label className="field">Subject<input value={values.subject} maxLength={100} onChange={(event) => update("subject", event.target.value)} placeholder="Mathematics" /></label>
+        <label className="field">Academic level<input value={values.academicLevel} maxLength={100} onChange={(event) => update("academicLevel", event.target.value)} placeholder="Bachelor 2" /></label>
+        <label className="field full">Availability<textarea value={values.availability} maxLength={1000} onChange={(event) => update("availability", event.target.value)} placeholder="When are you available to receive help?" /></label>
+      </div>
+      {error && <p className="alert" role="alert">{error}</p>}
+      <div className="actions"><button className="button" disabled={saving}>{saving ? "Saving..." : submitLabel}</button></div>
     </form>
   );
 }
