@@ -12,14 +12,30 @@ export async function middleware(request: NextRequest) {
   if ((pathname === "/login" || pathname === "/register") && token) {
     return NextResponse.redirect(new URL("/profile", request.url));
   }
-  if ((pathname === "/profile" || pathname.startsWith("/dashboard")) && !token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (
+    pathname === "/profile" ||
+    pathname.startsWith("/dashboard") ||
+    pathname === "/my-requests" ||
+    pathname === "/help-requests/new" ||
+    pathname.endsWith("/edit")
+  ) {
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/login", "/register", "/profile/:path*", "/dashboard/:path*"]
+  matcher: [
+    "/login",
+    "/register",
+    "/profile/:path*",
+    "/dashboard/:path*",
+    "/my-requests",
+    "/help-requests/new",
+    "/help-requests/:id/edit"
+  ]
 };
