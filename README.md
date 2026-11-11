@@ -68,6 +68,22 @@ To test manually, start PostgreSQL, apply migrations, run `npm run dev`, registe
 - Add session authentication and authorization middleware before exposing mutating routes.
 - Do not commit `.env`, credentials, or database dumps.
 
+## Help requests
+
+Help requests are managed with native SQL in `src/services/help-request.service.ts`. A student can publish, browse, search, filter, view, update, and list their own requests. Every new request is assigned to the authenticated session user and starts as `OPEN`; only that author can edit it, and only while it remains open. `HELP_ACCEPTED` and `COMPLETED` transitions belong to later proposal/session phases and are not exposed here.
+
+API endpoints:
+
+- `POST /api/help-requests` creates an open request.
+- `GET /api/help-requests` lists requests with `search`, `subject`, `academicLevel`, `status`, `page`, `limit` (maximum 50), and `sort` (`newest` or `oldest`).
+- `GET /api/help-requests/:id` returns a request with safe public author profile fields.
+- `PATCH /api/help-requests/:id` updates an owned open request.
+- `GET /api/help-requests/my-requests` lists only the authenticated student's requests and supports `status`, `page`, `limit`, and `sort`.
+
+List responses include `data` and `pagination` (`page`, `limit`, `totalItems`, and `totalPages`). The listing UI is available at `/help-requests`; authenticated students can publish at `/help-requests/new`, manage their own requests at `/my-requests`, and edit open requests from their details page.
+
+Migration `010_help_requests_created_at_idx.sql` adds the standalone creation-time index. Apply it, along with all other migrations, with `npm run db:migrate`. Verify the module with `npm run typecheck` and `npm run build`.
+
 ## Checks
 
 ```bash
