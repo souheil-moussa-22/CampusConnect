@@ -31,6 +31,6 @@ function LoginForm() {
       <button className="button" disabled={loading}>{loading ? "Logging in..." : "Log in"} <Icon name="arrow" /></button>
     </form>
     <p className="auth-foot">New to CampusConnect? <Link href="/register">Create a student account</Link></p>
-  </div></section><aside className="auth-art"><img src="/images/login.png" alt="Students connecting and helping each other" /></aside></div>;
+  </div></section><aside className="auth-art" aria-hidden="true"><div className="auth-visual"><div className="visual-orbit orbit-one" /><div className="visual-orbit orbit-two" /><div className="visual-panel"><div className="visual-avatar">CC</div><div><strong>Learn together</strong><span>Find your campus community</span></div><Icon name="arrow" /></div><div className="visual-badge badge-top"><Icon name="book" /><span>Shared knowledge</span></div><div className="visual-badge badge-bottom"><Icon name="check" /><span>Real connections</span></div></div></aside></div>;
 }
 export default function LoginPage() { return <Suspense fallback={<div className="loading">Loading...</div>}><LoginForm /></Suspense>; }
