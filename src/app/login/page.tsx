@@ -1,52 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Icon } from "@/components/ui/Icons";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setLoading(true);
+    event.preventDefault(); setError(""); setLoading(true);
     const form = new FormData(event.currentTarget);
-    const result = await signIn("credentials", {
-      email: form.get("email"),
-      password: form.get("password"),
-      redirect: false
-    });
+    const result = await signIn("credentials", { email: form.get("email"), password: form.get("password"), redirect: false });
     setLoading(false);
-    if (result?.error) {
-      setError("Invalid email or password.");
-      return;
-    }
-
-    router.push(searchParams.get("callbackUrl") || "/profile");
-    router.refresh();
+    if (result?.error) { setError("Invalid email or password."); return; }
+    router.push(searchParams.get("callbackUrl") || "/dashboard"); router.refresh();
   }
-
-  return (
-    <main>
-      <h1>Log in</h1>
-      {searchParams.get("registered") && <p>Account created. You can now log in.</p>}
-      <form onSubmit={submit}>
-        <label>Email<input name="email" type="email" required /></label>
-        <label>Password<input name="password" type="password" required /></label>
-        {error && <p role="alert">{error}</p>}
-        <button disabled={loading}>{loading ? "Logging in..." : "Log in"}</button>
-      </form>
-      <Link href="/register">Create a student account</Link>
-    </main>
-  );
+  return <div className="auth-page"><section className="auth-panel"><div className="auth-form-wrap">
+    <Link href="/login" className="brand"><span className="brand-mark">C</span>CampusConnect</Link>
+    <div className="auth-heading"><div className="eyebrow">Welcome back</div><h1>Connect. Learn. Grow.</h1><p>Sign in to find the support and skills you need on campus.</p></div>
+    {searchParams.get("registered") && <p className="success">Account created. You can now log in.</p>}
+    <form className="form-stack" onSubmit={submit}>
+      <label className="field">Email address<input name="email" type="email" placeholder="you@university.edu" required /></label>
+      <label className="field">Password<div className="password-wrap"><input name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" required /><button className="password-toggle" type="button" onClick={() => setShowPassword(!showPassword)}><Icon name={showPassword ? "eyeOff" : "eye"} /></button></div></label>
+      {error && <p className="alert" role="alert">{error}</p>}
+      <button className="button" disabled={loading}>{loading ? "Logging in..." : "Log in"} <Icon name="arrow" /></button>
+    </form>
+    <p className="auth-foot">New to CampusConnect? <Link href="/register">Create a student account</Link></p>
+  </div></section><aside className="auth-art"><img src="/images/login.png" alt="Students connecting and helping each other" /></aside></div>;
 }
-
-export default function LoginPage() {
-  return <Suspense fallback={<main><p>Loading...</p></main>}><LoginForm /></Suspense>;
-}
+export default function LoginPage() { return <Suspense fallback={<div className="loading">Loading...</div>}><LoginForm /></Suspense>; }

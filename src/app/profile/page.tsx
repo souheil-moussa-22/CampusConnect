@@ -1,69 +1,12 @@
 "use client";
-
-import { signOut } from "next-auth/react";
 import { FormEvent, useEffect, useState } from "react";
-
-type Profile = {
-  email: string;
-  full_name: string;
-  specialty: string | null;
-  academic_level: string | null;
-  bio: string | null;
-  availability: string | null;
-};
-
+import { AppShell } from "@/components/layout/AppShell";
+type Profile = { email: string; full_name: string; specialty: string | null; academic_level: string | null; bio: string | null; availability: string | null };
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/profile")
-      .then(async (response) => {
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error);
-        setProfile(body.profile);
-      })
-      .catch((reason: Error) => setError(reason.message));
-  }, []);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    setError("");
-    const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(form))
-    });
-    const body = await response.json();
-    if (!response.ok) {
-      setError(body.error ?? "Unable to update profile.");
-      return;
-    }
-    setProfile(body.profile);
-    setMessage("Profile updated.");
-  }
-
-  if (error && !profile) return <main><p role="alert">{error}</p></main>;
-  if (!profile) return <main><p>Loading profile...</p></main>;
-
-  return (
-    <main>
-      <h1>Your profile</h1>
-      <form onSubmit={submit}>
-        <label>Email<input value={profile.email} readOnly /></label>
-        <label>Full name<input name="fullName" defaultValue={profile.full_name} required /></label>
-        <label>Specialty<input name="specialty" defaultValue={profile.specialty ?? ""} required /></label>
-        <label>Academic level<input name="academicLevel" defaultValue={profile.academic_level ?? ""} required /></label>
-        <label>Bio<textarea name="bio" defaultValue={profile.bio ?? ""} /></label>
-        <label>Availability<textarea name="availability" defaultValue={profile.availability ?? ""} /></label>
-        {message && <p>{message}</p>}
-        {error && <p role="alert">{error}</p>}
-        <button>Save profile</button>
-      </form>
-      <button onClick={() => signOut({ callbackUrl: "/login" })}>Log out</button>
-    </main>
-  );
+  const [profile, setProfile] = useState<Profile | null>(null); const [message, setMessage] = useState(""); const [error, setError] = useState("");
+  useEffect(() => { fetch("/api/profile").then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error); setProfile(body.profile); }).catch((reason: Error) => setError(reason.message)); }, []);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setMessage(""); setError(""); const response = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); const body = await response.json(); if (!response.ok) { setError(body.error ?? "Unable to update profile."); return; } setProfile(body.profile); setMessage("Profile updated successfully."); }
+  if (error && !profile) return <AppShell><main className="content"><p className="alert" role="alert">{error}</p></main></AppShell>;
+  if (!profile) return <AppShell><main className="content"><div className="loading">Loading profile...</div></main></AppShell>;
+  return <AppShell><main className="content"><div className="page-heading"><div><div className="eyebrow">Your identity</div><h1>My profile</h1><p>Keep your profile up to date so classmates know how to connect with you.</p></div></div><div className="card form-card"><form className="form-stack" onSubmit={submit}><div className="form-grid"><label className="field">Email<input value={profile.email} readOnly /></label><label className="field">Full name<input name="fullName" defaultValue={profile.full_name} required /></label><label className="field">Specialty<input name="specialty" defaultValue={profile.specialty ?? ""} required /></label><label className="field">Academic level<input name="academicLevel" defaultValue={profile.academic_level ?? ""} required /></label><label className="field full">Bio<textarea name="bio" defaultValue={profile.bio ?? ""} placeholder="Tell your campus community a little about yourself" /></label><label className="field full">Availability<textarea name="availability" defaultValue={profile.availability ?? ""} placeholder="When are you usually available?" /></label></div>{message && <p className="success">{message}</p>}{error && <p className="alert" role="alert">{error}</p>}<div className="actions"><button className="button">Save changes</button></div></form></div></main></AppShell>;
 }
