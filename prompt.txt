@@ -1,0 +1,917 @@
+# CAMPUSCONNECT — COMPLETE PROJECT DEVELOPMENT PROMPT
+
+## 1. ROLE AND OBJECTIVE
+
+Act as a Senior Full-Stack Software Engineer, Software Architect, Clean Architecture Expert, and UI/UX Designer.
+
+Your mission is to design and develop a complete web application named **CampusConnect**, a collaborative platform dedicated to student assistance, skill sharing, and study session organization.
+
+The application must strictly respect the provided academic requirements document.
+
+This is not a simple CRUD application or a static frontend prototype.
+
+Build a complete, functional, secure, maintainable, and responsive application with:
+- Real authentication and authorization.
+- Persistent PostgreSQL database.
+- Well-designed business logic.
+- Clean Architecture.
+- Modular and reusable components.
+- Proper validation and error handling.
+- Complete student and administrator workflows.
+- An original Smart Matching recommendation feature.
+
+The final result must be suitable for an academic project demonstration and technical defense.
+
+---
+
+# 2. TECHNOLOGY STACK
+
+Use the following technologies throughout the project.
+
+### Frontend
+- Next.js with App Router.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- shadcn/ui.
+- Lucide React.
+- Recharts.
+
+### Backend and Application Logic
+- Next.js Server Actions.
+- Next.js Route Handlers when HTTP endpoints are needed.
+- Application Services and Use Cases.
+- Auth.js for authentication.
+
+### Database
+- PostgreSQL.
+- Prisma ORM.
+
+### Validation and Forms
+- Zod.
+- React Hook Form.
+
+### Testing
+- Vitest for unit and integration tests.
+- Playwright for end-to-end tests.
+
+### Development
+- Git and GitHub.
+- ESLint.
+- Prettier.
+- Environment variables through `.env`.
+
+Use stable, mutually compatible dependency versions.
+
+Do not introduce additional frameworks or unnecessary technologies without a clear technical justification.
+
+---
+
+# 3. MANDATORY ARCHITECTURE: CLEAN ARCHITECTURE
+
+The entire project MUST follow Clean Architecture.
+
+Do not simply organize files into folders named Domain, Application, Infrastructure, and Presentation. Implement genuine separation of responsibilities and dependency inversion.
+
+## 3.1 Domain Layer
+
+The Domain Layer contains the core business logic.
+
+It must be independent of all external technologies.
+
+Responsibilities:
+- Business entities.
+- Value Objects.
+- Domain services.
+- Domain enums.
+- Business invariants.
+- Domain exceptions.
+- Repository contracts when appropriate.
+
+Examples:
+- User.
+- StudentProfile.
+- HelpRequest.
+- HelpProposal.
+- StudySession.
+- Review.
+- Notification.
+- Report.
+
+The Domain Layer must NOT import:
+- React.
+- Next.js.
+- Prisma.
+- PostgreSQL libraries.
+- Auth.js.
+- UI components.
+
+All business rules must be independent of frameworks and databases.
+
+## 3.2 Application Layer
+
+The Application Layer coordinates business operations through Use Cases.
+
+Responsibilities:
+- Use Cases.
+- Application services.
+- DTOs.
+- Repository interfaces.
+- External service interfaces.
+- Authorization policies.
+- Application-level validation.
+- Transaction orchestration.
+
+Examples of Use Cases:
+
+Authentication and Users:
+- RegisterUser.
+- AuthenticateUser.
+- UpdateStudentProfile.
+- GetStudentProfile.
+
+Requests:
+- CreateHelpRequest.
+- UpdateHelpRequest.
+- DeleteHelpRequest.
+- GetHelpRequest.
+- SearchHelpRequests.
+- CompleteHelpRequest.
+
+Proposals:
+- CreateHelpProposal.
+- AcceptHelpProposal.
+- RejectHelpProposal.
+- GetReceivedProposals.
+
+Sessions:
+- CreateStudySession.
+- CompleteStudySession.
+- CancelStudySession.
+- GetStudentSessions.
+
+Reviews:
+- CreateReview.
+- GetStudentReviews.
+
+Notifications:
+- GetNotifications.
+- MarkNotificationAsRead.
+- MarkAllNotificationsAsRead.
+
+Reports:
+- CreateReport.
+- GetReports.
+- ModerateReport.
+
+Matching:
+- RecommendStudents.
+- CalculateCompatibilityScore.
+
+Each Use Case must have a clearly defined responsibility.
+
+Never access Prisma directly inside a Use Case.
+
+Never place React components or Next.js logic inside this layer.
+
+## 3.3 Infrastructure Layer
+
+This layer implements the technical details and external dependencies.
+
+Responsibilities:
+- Prisma repositories.
+- PostgreSQL persistence.
+- Database mappers.
+- Authentication adapters.
+- Notification persistence.
+- Transaction management.
+- External service integrations.
+
+Examples:
+- PrismaUserRepository.
+- PrismaHelpRequestRepository.
+- PrismaHelpProposalRepository.
+- PrismaStudySessionRepository.
+- PrismaReviewRepository.
+- PrismaNotificationRepository.
+
+Repository implementations must implement interfaces defined by the inner layers.
+
+Keep Prisma models separate from Domain entities.
+
+Use explicit mapping between database models and Domain objects.
+
+## 3.4 Presentation Layer
+
+This layer handles communication with users.
+
+Responsibilities:
+- Next.js pages.
+- React components.
+- Server Components.
+- Client Components.
+- Server Actions.
+- Route Handlers.
+- Form schemas.
+- UI state management.
+- HTTP response handling.
+
+Presentation must invoke Application Use Cases through a composition root or dependency injection mechanism.
+
+Do not implement business rules inside React components, Server Actions, or Route Handlers.
+
+## 3.5 Dependency Rule
+
+Respect this dependency direction:
+
+Presentation → Application → Domain
+
+Infrastructure implements interfaces defined by Application or Domain.
+
+The Domain must never depend on external layers.
+
+Apply:
+- SOLID principles.
+- Dependency Inversion Principle.
+- Repository Pattern.
+- Use Case Pattern.
+- Separation of Concerns.
+- Dependency Injection.
+
+Avoid circular dependencies, unnecessary abstractions, and overengineering.
+
+---
+
+# 4. PROJECT STRUCTURE
+
+Use a modular, feature-based Clean Architecture structure.
+
+Recommended organization:
+
+```text
+campus-connect/
+│
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+│
+├── src/
+│   │
+│   ├── app/
+│   │   ├── (public)/
+│   │   ├── (auth)/
+│   │   ├── (student)/
+│   │   ├── (admin)/
+│   │   └── api/
+│   │
+│   ├── modules/
+│   │   ├── users/
+│   │   ├── requests/
+│   │   ├── proposals/
+│   │   ├── sessions/
+│   │   ├── reviews/
+│   │   ├── notifications/
+│   │   ├── reports/
+│   │   └── matching/
+│   │
+│   ├── shared/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   ├── infrastructure/
+│   │   └── presentation/
+│   │
+│   ├── components/
+│   │   ├── ui/
+│   │   └── layout/
+│   │
+│   ├── lib/
+│   │   ├── auth/
+│   │   ├── prisma/
+│   │   └── config/
+│   │
+│   └── config/
+│
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+│
+├── public/
+├── .env.example
+├── package.json
+└── README.md
+```
+
+Each business module must follow:
+
+```text
+module-name/
+├── domain/
+│   ├── entities/
+│   ├── value-objects/
+│   ├── enums/
+│   ├── repositories/
+│   └── services/
+│
+├── application/
+│   ├── use-cases/
+│   ├── dto/
+│   ├── ports/
+│   └── services/
+│
+├── infrastructure/
+│   ├── repositories/
+│   ├── mappers/
+│   └── adapters/
+│
+└── presentation/
+    ├── components/
+    ├── actions/
+    └── schemas/
+```
+
+Adapt this structure when technically necessary without violating Clean Architecture.
+
+---
+
+# 5. UI/UX DESIGN REQUIREMENTS
+
+Create a professional, modern SaaS-style interface.
+
+### Visual identity
+
+- Primary colors: Deep Blue and Indigo.
+- Background: White and light neutral gray.
+- Secondary colors: Green, Orange, and Red for statuses.
+- Modern typography.
+- Subtle shadows.
+- Rounded cards.
+- Consistent spacing.
+- Smooth transitions.
+- Lucide icons.
+
+### Layout
+
+Create:
+- Public landing page.
+- Authentication pages.
+- Student dashboard.
+- Administrator dashboard.
+- Responsive sidebar.
+- Top navigation bar.
+- Profile dropdown.
+- Notification dropdown.
+- Search interface.
+
+### UX requirements
+
+Implement:
+- Responsive layouts.
+- Loading skeletons.
+- Empty states.
+- Error states.
+- Success notifications.
+- Confirmation dialogs.
+- Pagination.
+- Search and filters.
+- Accessible forms.
+- Consistent reusable components.
+
+Avoid excessive animations and visual complexity.
+
+The application should look like a real modern university collaboration platform.
+
+---
+
+# 6. FUNCTIONAL REQUIREMENTS
+
+## MODULE 1 — Authentication and Student Profiles
+
+Implement:
+- Registration.
+- Login.
+- Logout.
+- Session management.
+- Password hashing when using credentials authentication.
+- Protected routes.
+- Role-based authorization.
+
+Roles:
+- STUDENT.
+- ADMIN.
+
+Student profile fields:
+- First name.
+- Last name.
+- Email.
+- Profile picture.
+- Academic specialty.
+- Academic level.
+- Biography.
+- Skills.
+- Availability.
+
+Students can update only their own profiles.
+
+## MODULE 2 — Help Requests
+
+Students must be able to:
+- Create requests.
+- Update their own requests.
+- Delete their own requests.
+- View request details.
+- View their published requests.
+- Browse other students' requests.
+
+Request fields:
+- Title.
+- Description.
+- Subject.
+- Required academic level.
+- Availability.
+- Author.
+- Publication date.
+- Status.
+
+Statuses:
+- OPEN.
+- HELP_ACCEPTED.
+- COMPLETED.
+
+## MODULE 3 — Search and Filtering
+
+Implement real database-based filtering.
+
+Filters:
+- Subject.
+- Academic level.
+- Status.
+- Keyword.
+
+Features:
+- Combined filters.
+- Search.
+- Sorting.
+- Pagination.
+- Reset filters.
+
+Do not simulate filtering using static frontend data.
+
+## MODULE 4 — Help Proposals
+
+Students can propose their help on other students' requests.
+
+Proposal fields:
+- Request.
+- Student.
+- Motivation message.
+- Creation date.
+- Status.
+
+Statuses:
+- PENDING.
+- ACCEPTED.
+- REJECTED.
+
+Business rules:
+- A student cannot help themselves on their own request.
+- A student cannot submit duplicate proposals.
+- Only the request owner can accept or reject proposals.
+- Completed or closed requests cannot receive proposals.
+- Only one proposal can be accepted per request.
+
+When a proposal is accepted, execute an atomic workflow:
+
+1. Verify authorization.
+2. Verify request and proposal statuses.
+3. Accept the selected proposal.
+4. Reject all other pending proposals.
+5. Update the request status.
+6. Create the study session.
+7. Create notifications.
+
+## MODULE 5 — Study Sessions
+
+Create sessions after proposal acceptance.
+
+Session fields:
+- Related request.
+- Request owner.
+- Helping student.
+- Date.
+- Time.
+- Duration.
+- Meeting mode.
+- Location or meeting URL.
+- Status.
+
+Statuses:
+- SCHEDULED.
+- COMPLETED.
+- CANCELLED.
+
+Features:
+- Upcoming sessions.
+- Past sessions.
+- Session details.
+- Session completion.
+- Session cancellation.
+
+Completing a session must update the associated request to COMPLETED.
+
+## MODULE 6 — Reviews and Ratings
+
+Allow participants to review each other after a completed session.
+
+Review fields:
+- Reviewer.
+- Reviewed student.
+- Session.
+- Rating from 1 to 5.
+- Comment.
+- Creation date.
+
+Rules:
+- Only session participants can submit reviews.
+- The session must be completed.
+- No self-reviews.
+- No duplicate reviews for the same participant and session.
+
+Display:
+- Average rating.
+- Review count.
+- Comments.
+- Contribution history.
+
+## MODULE 7 — Student Dashboard
+
+Display real database statistics:
+
+- Published requests.
+- Submitted proposals.
+- Received proposals.
+- Completed sessions.
+- Upcoming sessions.
+- Average rating.
+
+Add:
+- Recent activity.
+- Active requests.
+- Pending proposals.
+- Upcoming sessions.
+- Recent notifications.
+
+## MODULE 8 — Administration
+
+Create a protected administrator area.
+
+Features:
+- View reported publications.
+- Inspect reports.
+- Review report reasons.
+- Hide or restore publications.
+- Resolve reports.
+- View users.
+- Suspend or reactivate accounts.
+
+Only ADMIN users may access these operations.
+
+## MODULE 9 — Notifications
+
+Implement internal notifications.
+
+Events:
+- Proposal received.
+- Proposal accepted.
+- Proposal rejected.
+- Session created.
+- Session updated.
+- Session cancelled.
+- Session completed.
+- Review received.
+- Report moderated.
+
+Notification fields:
+- Recipient.
+- Type.
+- Message.
+- Creation date.
+- Read status.
+
+Add a notification dropdown with unread count and notification history.
+
+## MODULE 10 — Original Feature: Smart Matching
+
+Implement an intelligent student recommendation system.
+
+The objective is to recommend students who are likely to help with a particular request.
+
+Calculate a compatibility score using:
+- Skills matching.
+- Specialty matching.
+- Academic level compatibility.
+- Availability overlap.
+- Student ratings.
+
+Return:
+- Student profile.
+- Matching skills.
+- Average rating.
+- Compatibility percentage.
+- Explanation of matching criteria.
+
+Use a transparent weighted scoring algorithm.
+
+Do not introduce an external AI model unless genuinely necessary.
+
+The matching logic must belong to the Application or Domain Layer, not React components.
+
+---
+
+# 7. DATABASE DESIGN
+
+Design a normalized relational database using Prisma and PostgreSQL.
+
+Main entities:
+- User.
+- StudentProfile.
+- Skill.
+- Subject.
+- HelpRequest.
+- HelpProposal.
+- StudySession.
+- Review.
+- Report.
+- Notification.
+- Availability.
+
+Define:
+- Correct relationships.
+- Primary keys.
+- Foreign keys.
+- Unique constraints.
+- Appropriate indexes.
+- Created and updated timestamps.
+- Referential integrity.
+
+Keep persistence models separate from Domain entities.
+
+Use Prisma migrations.
+
+Create a seed script with realistic demonstration data.
+
+Ensure data persists after application restarts.
+
+---
+
+# 8. SECURITY AND AUTHORIZATION
+
+Security is mandatory.
+
+Implement:
+- Secure authentication.
+- Password hashing.
+- Role-based authorization.
+- Resource ownership verification.
+- Server-side validation.
+- Input sanitization where appropriate.
+- Secure environment configuration.
+- Protected administrative operations.
+- Appropriate error handling.
+
+Never rely only on frontend permissions.
+
+Every sensitive operation must verify authorization on the server.
+
+Users must not be able to manipulate requests, proposals, sessions, or profiles belonging to other users.
+
+Do not expose passwords, secrets, or sensitive internal data.
+
+---
+
+# 9. TESTING AND QUALITY
+
+Use Vitest for unit and integration tests.
+
+Use Playwright for end-to-end tests.
+
+### Essential business scenarios
+
+1. A student can register and log in.
+2. A student can publish a request.
+3. Another student can propose help.
+4. The request owner can accept a proposal.
+5. Another student cannot accept that proposal.
+6. Closed requests reject new proposals.
+7. Duplicate proposals are prevented.
+8. Accepting a proposal creates a session.
+9. Completing a session closes its request.
+10. Only participants can review a completed session.
+11. A student cannot modify another student's request.
+12. A student cannot access the administrator area.
+13. Search filters return correct results.
+14. Data persists after page reload.
+
+### Architectural tests
+
+Verify:
+- Domain independence.
+- Application independence from Prisma.
+- Repository implementations respect interfaces.
+- No circular dependencies.
+- Business logic is not located in UI components.
+- Use Cases can be unit-tested with mocked repositories.
+
+Maintain clean TypeScript types and resolve ESLint errors.
+
+---
+
+# 10. DEVELOPMENT WORKFLOW
+
+Develop the project progressively.
+
+Do not attempt to generate the entire application in one step.
+
+## Phase 1 — Requirements and Architecture
+
+- Analyze the provided requirements document.
+- Identify actors and use cases.
+- Identify business rules.
+- Design application workflows.
+- Design the database model.
+- Define Clean Architecture boundaries.
+- Define module responsibilities.
+- Produce an implementation plan.
+
+Present the architecture before writing implementation code.
+
+## Phase 2 — Project Initialization
+
+- Initialize Next.js.
+- Configure TypeScript.
+- Configure Tailwind CSS.
+- Install and configure shadcn/ui.
+- Configure PostgreSQL and Prisma.
+- Configure Auth.js.
+- Configure Zod.
+- Establish the project structure.
+
+## Phase 3 — Core Architecture
+
+- Implement Domain entities.
+- Define repository interfaces.
+- Implement application Use Cases.
+- Implement Infrastructure repositories.
+- Configure dependency injection.
+- Create database migrations.
+- Implement authentication and authorization.
+
+## Phase 4 — Core Business Modules
+
+Develop in this order:
+
+1. Users and profiles.
+2. Help requests.
+3. Help proposals.
+4. Study sessions.
+5. Reviews.
+
+Test each module before proceeding.
+
+## Phase 5 — User Interface
+
+Implement:
+- Public landing page.
+- Authentication pages.
+- Student dashboard.
+- Requests pages.
+- Proposal management.
+- Sessions management.
+- Profile pages.
+- Administrator dashboard.
+
+Connect every feature to real application Use Cases.
+
+## Phase 6 — Advanced Modules
+
+Implement:
+- Notifications.
+- Report management.
+- Smart Matching.
+- Statistics and charts.
+
+## Phase 7 — Testing and Delivery
+
+- Execute unit tests.
+- Execute integration tests.
+- Execute end-to-end tests.
+- Verify authorization.
+- Verify data persistence.
+- Fix bugs.
+- Optimize responsive layouts.
+- Prepare README.
+- Prepare demonstration accounts.
+- Prepare deployment.
+
+---
+
+# 11. DEVELOPMENT RULES
+
+These instructions must be respected throughout development:
+
+1. Always follow Clean Architecture.
+2. Never put business logic inside React components.
+3. Never access Prisma directly from Application Use Cases.
+4. Never expose database implementation details to the Domain.
+5. Use dependency injection and repository interfaces.
+6. Keep each Use Case focused on one business operation.
+7. Avoid duplicated logic.
+8. Avoid oversized components and services.
+9. Never leave non-functional buttons.
+10. Never use static mock data as a replacement for implemented backend functionality.
+11. Handle loading, error, empty, and success states.
+12. Validate all important operations on the server.
+13. Use database transactions for multi-entity business workflows.
+14. Do not introduce unnecessary technologies.
+15. Do not claim a feature is complete before implementing and testing it.
+16. Preserve existing project code when modifying an existing repository.
+
+After completing each module, report:
+- Files created and modified.
+- Architecture decisions.
+- Implemented functionality.
+- Tests executed.
+- Remaining issues.
+- Next development tasks.
+
+---
+
+# 12. FINAL DELIVERABLES
+
+The final project must include:
+
+- Complete CampusConnect web application.
+- Clean Architecture implementation.
+- Functional authentication.
+- Student profiles.
+- Help request management.
+- Search and filtering.
+- Help proposal workflow.
+- Study session management.
+- Review and rating system.
+- Student dashboard.
+- Administrator dashboard.
+- Notifications.
+- Report management.
+- Smart Matching.
+- PostgreSQL database.
+- Prisma migrations and seed.
+- Unit tests.
+- Integration tests.
+- End-to-end tests.
+- Responsive UI.
+- Complete README.
+
+The README must explain:
+- Project overview.
+- Architecture.
+- Technologies.
+- Folder structure.
+- Prerequisites.
+- Installation.
+- Environment variables.
+- Database setup.
+- Prisma commands.
+- Running the application.
+- Demonstration accounts.
+- Testing.
+- Deployment.
+- Known limitations.
+
+---
+
+# 13. FIRST ACTION — START WITH PHASE 1
+
+Before implementing anything:
+
+1. Inspect the existing repository, if one exists.
+2. Read and analyze the complete CampusConnect requirements document.
+3. Identify all actors and their permissions.
+4. Extract all functional and non-functional requirements.
+5. Identify every business rule and workflow.
+6. Propose the complete Clean Architecture.
+7. Design the Prisma relational data model.
+8. Define the modules and their dependencies.
+9. Identify the main Use Cases.
+10. Create a phased implementation backlog.
+
+Present the results clearly and wait for architectural validation before starting implementation.
+
+Do not skip the analysis phase.
+
+**FINAL OBJECTIVE:**
+
+Build CampusConnect as a professional, secure, maintainable, modular, and fully functional student collaboration platform using Next.js, React, TypeScript, PostgreSQL, Prisma, and strict Clean Architecture.
+
+The quality of the architecture, correctness of business rules, persistence, security, and demonstrability of the application are more important than simply generating a large amount of code.
