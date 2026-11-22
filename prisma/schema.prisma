@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+enum HelpRequestStatus {
+  OPEN
+  HELP_ACCEPTED
+  COMPLETED
+}
+enum HelpProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+enum StudySessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+enum MeetingMode {
+  IN_PERSON
+  ONLINE
+}
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+enum ReportReason {
+  INAPPROPRIATE
+  SPAM
+  HARASSMENT
+  OTHER
+}
+enum NotificationType {
+  PROPOSAL_RECEIVED
+  PROPOSAL_ACCEPTED
+  PROPOSAL_REJECTED
+  SESSION_CREATED
+  SESSION_UPDATED
+  SESSION_CANCELLED
+  SESSION_COMPLETED
+  REVIEW_RECEIVED
+  REPORT_MODERATED
+  ACCOUNT_STATUS
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  image         String?
+  role          Role     @default(STUDENT)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profile       StudentProfile?
+  authoredRequests HelpRequest[] @relation("RequestAuthor")
+  proposals     HelpProposal[]
+  ownedSessions StudySession[] @relation("SessionOwner")
+  helpingSessions StudySession[] @relation("HelpingStudent")
+  reviewsGiven  Review[] @relation("ReviewReviewer")
+  reviewsReceived Review[] @relation("ReviewReviewed")
+  notifications Notification[]
+  reportsCreated Report[] @relation("ReportReporter")
+  reportsModerated Report[] @relation("ReportModerator")
+}
+
+model StudentProfile {
+  id         String @id @default(cuid())
+  userId     String @unique
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty  String?
+  level      String?
+  biography  String?
+  pictureUrl String?
+  skills     Skill[]
+  availabilities Availability[]
+  averageRating Float @default(0)
+  reviewCount Int @default(0)
+}
+
+model Skill {
+  id        String @id @default(cuid())
+  name      String @unique
+  profiles  StudentProfile[]
+}
+
+model Subject {
+  id       String @id @default(cuid())
+  name     String @unique
+  requests HelpRequest[]
+}
+
+model Availability {
+  id        String @id @default(cuid())
+  profileId String
+  profile   StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  day       String
+  startTime String
+  endTime   String
+}
+
+model HelpRequest {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  subjectId   String
+  subject     Subject @relation(fields: [subjectId], references: [id])
+  level       String
+  availability String?
+  authorId    String
+  author      User @relation("RequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  status      HelpRequestStatus @default(OPEN)
+  hidden      Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  proposals   HelpProposal[]
+  sessions    StudySession[]
+  reports     Report[] @relation("RequestReports")
+  @@index([subjectId, status, level, authorId, createdAt])
+}
+
+model HelpProposal {
+  id        String @id @default(cuid())
+  requestId String
+  request   HelpRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  message   String
+  status    HelpProposalStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([requestId, studentId])
+  @@index([requestId, studentId, status])
+}
+
+model StudySession {
+  id             String @id @default(cuid())
+  requestId      String
+  request        HelpRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  ownerId        String
+  owner          User @relation("SessionOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  helpingStudentId String
+  helpingStudent User @relation("HelpingStudent", fields: [helpingStudentId], references: [id], onDelete: Cascade)
+  date           DateTime
+  duration       Int
+  meetingMode    MeetingMode
+  location       String?
+  meetingUrl     String?
+  status         StudySessionStatus @default(SCHEDULED)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  reviews        Review[]
+  @@index([ownerId, helpingStudentId, status, date])
+}
+
+model Review {
+  id             String @id @default(cuid())
+  sessionId      String
+  session        StudySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reviewerId     String
+  reviewer       User @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewedStudentId String
+  reviewedStudent User @relation("ReviewReviewed", fields: [reviewedStudentId], references: [id], onDelete: Cascade)
+  rating         Int
+  comment        String
+  createdAt      DateTime @default(now())
+  @@unique([sessionId, reviewerId, reviewedStudentId])
+  @@index([reviewedStudentId])
+}
+
+model Report {
+  id          String @id @default(cuid())
+  reporterId  String
+  reporter    User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  requestId   String?
+  request     HelpRequest? @relation("RequestReports", fields: [requestId], references: [id], onDelete: Cascade)
+  proposalId  String?
+  reason      ReportReason
+  details     String?
+  status      ReportStatus @default(PENDING)
+  moderatorId String?
+  moderator   User? @relation("ReportModerator", fields: [moderatorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([status, requestId])
+}
+
+model Notification {
+  id        String @id @default(cuid())
+  recipientId String
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  read      Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@index([recipientId, read, createdAt])
+}
