@@ -4,6 +4,7 @@ import type { ProposalRepository } from './ports';
 export class CreateHelpProposal {
   constructor(private repository: ProposalRepository) {}
   async execute(actorId: string, requestId: string, message: string) {
+    if (message.trim().length < 10) throw new DomainError('Proposal message must be at least 10 characters');
     const request = await this.repository.findRequest(requestId);
     if (!request) throw new DomainError('Request not found');
     ProposalRules.cannotHelpOwnRequest(request.authorId, actorId);
@@ -22,7 +23,28 @@ export class AcceptHelpProposal {
     if (proposal.request.authorId !== actorId) throw new DomainError('Only the request owner can accept proposals');
     ProposalRules.requestAcceptable(proposal.request.status);
     ProposalRules.proposalPending(proposal.status);
-    await this.repository.acceptAtomically(proposal.id, proposal.requestId, actorId, proposal.studentId);
+    await this.repository.acceptAtomically({
+      proposalId: proposal.id,
+      requestId: proposal.requestId,
+      ownerId: actorId,
+      helpingStudentId: proposal.studentId,
+      sessionDate: new Date(Date.now() + 86400000),
+      duration: 60,
+      meetingMode: 'ONLINE',
+      meetingUrl: 'https://meet.google.com/campus-connect',
+      notifications: [
+        {
+          recipientId: proposal.studentId,
+          type: 'PROPOSAL_ACCEPTED',
+          message: 'Your proposal was accepted. A study session is scheduled.',
+        },
+        {
+          recipientId: actorId,
+          type: 'SESSION_CREATED',
+          message: 'A study session was created for your accepted proposal.',
+        },
+      ],
+    });
   }
 }
 

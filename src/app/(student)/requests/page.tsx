@@ -1,28 +1,12 @@
 import Link from 'next/link';
 import { ArrowRight, BookOpen, MessageSquareText, Search } from 'lucide-react';
-import { prisma } from '@/lib/prisma';
+import { campusApplication } from '@/presentation/server/services';
 
 export default async function Requests({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
-  const keyword = params.keyword?.trim();
   const [requests, subjects] = await Promise.all([
-    prisma.helpRequest.findMany({
-      where: {
-        hidden: false,
-        AND: [
-          keyword
-            ? { OR: [{ title: { contains: keyword, mode: 'insensitive' } }, { description: { contains: keyword, mode: 'insensitive' } }] }
-            : {},
-          { subject: { name: params.subject || undefined } },
-          { level: params.level || undefined },
-          { status: params.status as 'OPEN' | 'HELP_ACCEPTED' | 'COMPLETED' | undefined },
-        ],
-      },
-      include: { subject: true, author: true, _count: { select: { proposals: true } } },
-      orderBy: { createdAt: params.sort === 'oldest' ? 'asc' : 'desc' },
-      take: 20,
-    }),
-    prisma.subject.findMany({ orderBy: { name: 'asc' } }),
+    campusApplication.listRequests(params),
+    campusApplication.listSubjects(),
   ]);
 
   return (

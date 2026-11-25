@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
-const prisma = new PrismaClient();
 async function main() {
   await prisma.notification.deleteMany(); await prisma.report.deleteMany(); await prisma.review.deleteMany(); await prisma.studySession.deleteMany(); await prisma.helpProposal.deleteMany(); await prisma.helpRequest.deleteMany(); await prisma.availability.deleteMany(); await prisma.studentProfile.deleteMany(); await prisma.user.deleteMany(); await prisma.skill.deleteMany(); await prisma.subject.deleteMany();
   const password = await bcrypt.hash('Password123!', 12);

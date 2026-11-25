@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Sparkles } from 'lucide-react';
-import { signIn } from '@/lib/auth';
+import { signIn } from '@/presentation/auth';
 
 export default function Login() {
   return (
