@@ -14,6 +14,12 @@ Demo accounts (password `Password123!`):
 - `lena@campus.test` / `noah@campus.test` / `maya@campus.test` (student)
 - `admin@campus.test` (administrator)
 
+## Docker
+
+Run `docker compose up --build` and open `http://localhost:3000`. Compose starts PostgreSQL, waits for it to become healthy, then starts the app after applying database migrations. The database and app are available on ports `5432` and `3000`.
+
+For local use, Compose supplies default PostgreSQL credentials and a development-only auth secret. Set `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `AUTH_SECRET` in `.env` to override them; use a strong `AUTH_SECRET` outside local development. Stop the containers with `docker compose down`; add `-v` only when you also want to delete the persisted database volume.
+
 ## Quality commands
 
 - `npm run typecheck`
