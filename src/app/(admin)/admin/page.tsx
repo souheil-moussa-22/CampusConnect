@@ -1,3 +1,52 @@
-import { auth } from '@/lib/auth'; import { prisma } from '@/lib/prisma'; import { redirect } from 'next/navigation';
-export default async function Admin(){const session=await auth();if(!session||session.user.role!=='ADMIN')redirect('/dashboard');const [users,requests,reports]=await Promise.all([prisma.user.findMany({include:{profile:true},orderBy:{createdAt:'desc'}}),prisma.helpRequest.count(),prisma.report.findMany({include:{request:true,reporter:true},orderBy:{createdAt:'desc'}})]);return <div><h1 className="text-2xl font-bold">Administration</h1><div className="mt-6 grid gap-4 sm:grid-cols-3"><Stat label="Users" value={users.length}/><Stat label="Publications" value={requests}/><Stat label="Pending reports" value={reports.filter(r=>r.status==='PENDING').length}/></div><section className="mt-6 rounded-xl border bg-white p-5"><h2 className="font-bold">Users</h2><div className="mt-4 divide-y">{users.map(u=><div key={u.id} className="flex items-center justify-between py-3"><div><b>{u.name}</b><p className="text-xs text-slate-500">{u.email} · {u.role}</p></div><form action={async()=>{'use server';const current=await auth();if(!current||current.user.role!=='ADMIN')throw new Error('Unauthorized');await prisma.user.update({where:{id:u.id},data:{status:u.status==='ACTIVE'?'SUSPENDED':'ACTIVE'}});await prisma.notification.create({data:{recipientId:u.id,type:'ACCOUNT_STATUS',message:`Your account was ${u.status==='ACTIVE'?'suspended':'reactivated'}.`}});redirect('/admin')}}><button className="rounded-lg border px-3 py-2 text-xs">{u.status==='ACTIVE'?'Suspend':'Reactivate'}</button></form></div>)}</div></section><section className="mt-6 rounded-xl border bg-white p-5"><h2 className="font-bold">Reports</h2>{reports.length?reports.map(r=><div key={r.id} className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 p-4"><div><b>{r.request?.title||'Publication'}</b><p className="text-sm text-slate-500">{r.reason} · reported by {r.reporter.name} · {r.status}</p></div>{r.status==='PENDING'&&<form action={async()=>{'use server';const current=await auth();if(!current||current.user.role!=='ADMIN')throw new Error('Unauthorized');await prisma.$transaction(async tx=>{await tx.report.update({where:{id:r.id},data:{status:'RESOLVED',moderatorId:current.user.id}});if(r.requestId)await tx.helpRequest.update({where:{id:r.requestId},data:{hidden:true}});await tx.notification.create({data:{recipientId:r.reporterId,type:'REPORT_MODERATED',message:'A report you submitted was resolved and the publication was hidden.'}})});redirect('/admin')}}><button className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white">Hide & resolve</button></form>}</div>):<p className="mt-4 text-sm text-slate-500">No reports.</p>}</section></div>}
-function Stat({label,value}:{label:string,value:number|string}){return <div className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div>}
+import { auth } from '@/presentation/auth';
+import { redirect } from 'next/navigation';
+import { campusApplication } from '@/presentation/server/services';
+
+export default async function Admin() {
+  const session = await auth();
+  if (!session || session.user.role !== 'ADMIN') redirect('/dashboard');
+  const { users, requestCount, reports } = await campusApplication.getAdminData();
+
+  return <div>
+    <h1 className="text-2xl font-bold">Administration</h1>
+    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <Stat label="Users" value={users.length}/>
+      <Stat label="Publications" value={requestCount}/>
+      <Stat label="Pending reports" value={reports.filter(report => report.status === 'PENDING').length}/>
+    </div>
+    <section className="mt-6 rounded-xl border bg-white p-5">
+      <h2 className="font-bold">Users</h2>
+      <div className="mt-4 divide-y">{users.map(user => <div key={user.id} className="flex items-center justify-between py-3">
+        <div><b>{user.name}</b><p className="text-xs text-slate-500">{user.email} · {user.role}</p></div>
+        <form action={async () => {
+          'use server';
+          const current = await auth();
+          if (!current || current.user.role !== 'ADMIN') throw new Error('Unauthorized');
+          await campusApplication.toggleAccountStatus(user.id);
+          redirect('/admin');
+        }}>
+          <button className="rounded-lg border px-3 py-2 text-xs">{user.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}</button>
+        </form>
+      </div>)}</div>
+    </section>
+    <section className="mt-6 rounded-xl border bg-white p-5">
+      <h2 className="font-bold">Reports</h2>
+      {reports.length ? reports.map(report => <div key={report.id} className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 p-4">
+        <div><b>{report.request?.title || 'Publication'}</b><p className="text-sm text-slate-500">{report.reason} · reported by {report.reporter.name} · {report.status}</p></div>
+        {report.status === 'PENDING' && <form action={async () => {
+          'use server';
+          const current = await auth();
+          if (!current || current.user.role !== 'ADMIN') throw new Error('Unauthorized');
+          await campusApplication.resolveReport(report.id, current.user.id);
+          redirect('/admin');
+        }}>
+          <button className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white">Hide &amp; resolve</button>
+        </form>}
+      </div>) : <p className="mt-4 text-sm text-slate-500">No reports.</p>}
+    </section>
+  </div>;
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return <div className="rounded-xl border bg-white p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div>;
+}

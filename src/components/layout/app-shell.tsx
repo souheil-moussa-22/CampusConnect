@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Bell, LogOut } from 'lucide-react';
-import { auth, signOut } from '@/lib/auth';
+import { auth, signOut } from '@/presentation/auth';
 import { AppNavigation } from '@/components/layout/app-navigation';
 
 export async function AppShell({ children }: { children: React.ReactNode }) {

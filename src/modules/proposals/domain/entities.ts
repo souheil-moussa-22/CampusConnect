@@ -1,5 +1,7 @@
+import { DomainError } from '@/domain/errors';
+
 export type ProposalStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
-export class DomainError extends Error {}
+export { DomainError } from '@/domain/errors';
 export class ProposalRules {
   static cannotHelpOwnRequest(requestAuthorId: string, studentId: string) {
     if (requestAuthorId === studentId) throw new DomainError('You cannot submit a proposal to your own request');

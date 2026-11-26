@@ -1,32 +1,22 @@
 import Link from 'next/link';
 import { ArrowRight, Bell, CalendarDays, MessageSquareText, Plus, Search, Star, Users } from 'lucide-react';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { auth } from '@/presentation/auth';
 import { redirect } from 'next/navigation';
+import { campusApplication } from '@/presentation/server/services';
 
 export default async function Dashboard() {
   const session = await auth();
   if (!session) redirect('/login');
 
   const id = session.user.id;
-  const [requests, proposals, received, sessions, notifications, profile] = await Promise.all([
-    prisma.helpRequest.count({ where: { authorId: id } }),
-    prisma.helpProposal.count({ where: { studentId: id } }),
-    prisma.helpProposal.count({ where: { request: { authorId: id }, status: 'PENDING' } }),
-    prisma.studySession.findMany({
-      where: { OR: [{ ownerId: id }, { helpingStudentId: id }] },
-      include: { request: true },
-      orderBy: { date: 'asc' },
-    }),
-    prisma.notification.findMany({ where: { recipientId: id }, orderBy: { createdAt: 'desc' }, take: 4 }),
-    prisma.studentProfile.findUnique({ where: { userId: id } }),
-  ]);
+  const data = await campusApplication.getDashboard(id);
+  const { sessions, notifications } = data;
   const stats = [
-    { label: 'My requests', value: requests, icon: MessageSquareText, tone: 'bg-indigo-50 text-indigo-700' },
-    { label: 'Proposals sent', value: proposals, icon: ArrowRight, tone: 'bg-sky-50 text-sky-700' },
-    { label: 'Awaiting response', value: received, icon: Users, tone: 'bg-amber-50 text-amber-700' },
+    { label: 'My requests', value: data.requestCount, icon: MessageSquareText, tone: 'bg-indigo-50 text-indigo-700' },
+    { label: 'Proposals sent', value: data.proposalCount, icon: ArrowRight, tone: 'bg-sky-50 text-sky-700' },
+    { label: 'Awaiting response', value: data.receivedProposalCount, icon: Users, tone: 'bg-amber-50 text-amber-700' },
     { label: 'Study sessions', value: sessions.length, icon: CalendarDays, tone: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Average rating', value: profile?.averageRating.toFixed(1) ?? '—', icon: Star, tone: 'bg-violet-50 text-violet-700' },
+    { label: 'Average rating', value: data.averageRating?.toFixed(1) ?? '—', icon: Star, tone: 'bg-violet-50 text-violet-700' },
   ];
   const upcomingSessions = sessions.filter(item => item.status === 'SCHEDULED').slice(0, 4);
 

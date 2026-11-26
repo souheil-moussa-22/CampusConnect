@@ -95,43 +95,40 @@ Versions and scripts are defined in [`package.json`](./package.json), and the Po
 
 ## Architecture
 
-The project uses a **feature-oriented, Clean Architecture-inspired structure**, but the separation is applied selectively rather than uniformly across every feature.
+The project uses Clean Architecture with dependencies pointing inward:
 
-- The proposal workflow has a domain layer for proposal rules, an application layer for use cases and repository ports, and an infrastructure adapter backed by Prisma.
-- The matching score calculator is framework-independent domain logic.
-- Next.js App Router pages and server actions provide the presentation layer. Several page actions access Prisma directly rather than going through application use cases.
-- Prisma maps application data to PostgreSQL using the schema in [`prisma/schema.prisma`](./prisma/schema.prisma).
+- **Domain** contains framework-independent rules and calculations, organized by feature under `src/modules/*/domain`.
+- **Application** contains use cases and repository contracts in `src/application` and `src/modules/*/application`. It depends on Domain and defines the ports Infrastructure implements.
+- **Infrastructure** contains Prisma persistence, password hashing, and other external-system adapters under `src/infrastructure` and feature-specific `src/modules/*/infrastructure`.
+- **Presentation** contains the Next.js routes, components, Auth.js integration, and the composition root under `src/app`, `src/components`, and `src/presentation`. Pages call application services; they do not access Prisma.
+
+The composition root in `src/presentation/server/services.ts` wires application use cases to Prisma-backed repositories and infrastructure services. Prisma is confined to Infrastructure; server actions perform authentication, translate form input, invoke use cases, and handle redirects.
 
 ```mermaid
 flowchart LR
     Browser[Browser]
     Pages[Next.js App Router pages]
     Actions[Server actions and Auth.js route]
-    Auth[Credentials authentication<br/>bcrypt password comparison<br/>JWT session]
-    UseCases[Proposal application use cases]
-    Rules[Proposal domain rules]
-    Ports[Proposal repository port]
-    Adapter[Prisma proposal repository]
-    Matching[Matching domain calculator]
-    Prisma[Prisma Client]
+    Auth[Auth.js presentation adapter]
+    UseCases[Application use cases]
+    Rules[Domain rules and matching]
+    Ports[Application repository ports]
+    Adapter[Prisma-backed repositories]
+    Prisma[Infrastructure Prisma client]
     DB[(PostgreSQL)]
 
     Browser --> Pages
     Pages --> Actions
     Actions --> Auth
-    Auth --> Prisma
     Actions --> UseCases
     UseCases --> Rules
     UseCases --> Ports
     Adapter -. implements .-> Ports
-    Actions --> Adapter
-    Pages --> Matching
-    Actions --> Prisma
     Adapter --> Prisma
     Prisma --> DB
 ```
 
-The diagram distinguishes the proposal use-case path from page/server-action code that directly uses Prisma. Authentication checks credentials against stored password hashes; the application data layer uses Prisma to persist users, requests, proposals, sessions, reviews, reports, and notifications.
+The framework-independent application layer owns workflows and depends on repository interfaces. Infrastructure implements those interfaces and owns database transactions; presentation depends on application services, with the composition root wiring concrete adapters.
 
 ## Project structure
 
@@ -140,7 +137,6 @@ The diagram distinguishes the proposal use-case path from page/server-action cod
 ├── prisma/
 │   ├── migrations/              # Committed PostgreSQL migration history
 │   ├── schema.prisma            # Database models, enums, and relations
-│   └── seed.ts                  # Development sample data
 ├── src/
 │   ├── app/
 │   │   ├── (admin)/             # Administrator pages
@@ -148,11 +144,14 @@ The diagram distinguishes the proposal use-case path from page/server-action cod
 │   │   ├── (student)/           # Dashboard and student workflows
 │   │   ├── api/auth/            # Auth.js route handler
 │   │   └── page.tsx             # Public landing page
+│   ├── application/             # Application use cases and persistence ports
 │   ├── components/layout/       # Shared application shell and navigation
-│   ├── lib/                     # Authentication and Prisma client setup
+│   ├── domain/                  # Shared domain primitives
+│   ├── infrastructure/          # Prisma, repositories, password hashing, and seed data
 │   ├── modules/
 │   │   ├── matching/domain/     # Compatibility score calculation
-│   │   └── proposals/           # Domain, use cases, ports, Prisma adapter
+│   │   └── proposals/           # Feature domain, use cases, ports, adapter
+│   ├── presentation/            # Auth.js and dependency composition root
 │   └── types/                   # NextAuth session type augmentation
 ├── tests/
 │   ├── e2e/                     # Playwright browser smoke tests

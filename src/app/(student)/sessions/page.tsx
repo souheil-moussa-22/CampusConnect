@@ -1,15 +1,11 @@
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { auth } from '@/presentation/auth';
 import { redirect } from 'next/navigation';
+import { campusApplication } from '@/presentation/server/services';
 
 export default async function Sessions() {
   const session = await auth();
   if (!session) redirect('/login');
-  const sessions = await prisma.studySession.findMany({
-    where: { OR: [{ ownerId: session.user.id }, { helpingStudentId: session.user.id }] },
-    include: { request: true, owner: true, helpingStudent: true },
-    orderBy: { date: 'desc' }
-  });
+  const sessions = await campusApplication.getSessions(session.user.id);
 
   return (
     <div>
@@ -31,19 +27,8 @@ export default async function Sessions() {
                 <form action={async () => {
                   'use server';
                   const current = await auth();
-                  if (!current || (current.user.id !== s.ownerId && current.user.id !== s.helpingStudentId) || s.status !== 'SCHEDULED') {
-                    throw new Error('Unauthorized');
-                  }
-                  await prisma.$transaction(async tx => {
-                    await tx.studySession.update({ where: { id: s.id }, data: { status: 'COMPLETED' } });
-                    await tx.helpRequest.update({ where: { id: s.requestId }, data: { status: 'COMPLETED' } });
-                    await tx.notification.createMany({
-                      data: [
-                        { recipientId: s.ownerId, type: 'SESSION_COMPLETED', message: `Session for ${s.request.title} was completed.` },
-                        { recipientId: s.helpingStudentId, type: 'SESSION_COMPLETED', message: `Session for ${s.request.title} was completed.` }
-                      ]
-                    });
-                  });
+                  if (!current) redirect('/login');
+                  await campusApplication.transitionSession(s.id, current.user.id, 'COMPLETED');
                   redirect('/sessions');
                 }}>
                   <button className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">Complete</button>
@@ -51,16 +36,8 @@ export default async function Sessions() {
                 <form action={async () => {
                   'use server';
                   const current = await auth();
-                  if (!current || (current.user.id !== s.ownerId && current.user.id !== s.helpingStudentId) || s.status !== 'SCHEDULED') {
-                    throw new Error('Unauthorized');
-                  }
-                  await prisma.studySession.update({ where: { id: s.id }, data: { status: 'CANCELLED' } });
-                  await prisma.notification.createMany({
-                    data: [
-                      { recipientId: s.ownerId, type: 'SESSION_CANCELLED', message: `Session for ${s.request.title} was cancelled.` },
-                      { recipientId: s.helpingStudentId, type: 'SESSION_CANCELLED', message: `Session for ${s.request.title} was cancelled.` }
-                    ]
-                  });
+                  if (!current) redirect('/login');
+                  await campusApplication.transitionSession(s.id, current.user.id, 'CANCELLED');
                   redirect('/sessions');
                 }}>
                   <button className="rounded-lg border px-3 py-2 text-sm">Cancel</button>

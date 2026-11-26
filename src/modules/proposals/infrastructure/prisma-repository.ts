@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/infrastructure/persistence/prisma';
 import type { ProposalRepository } from '../application/ports';
 
 export class PrismaProposalRepository implements ProposalRepository {
@@ -11,16 +11,23 @@ export class PrismaProposalRepository implements ProposalRepository {
     if (!row) return null;
     return { id: row.id, requestId: row.requestId, studentId: row.studentId, status: row.status, request: { id: row.request.id, authorId: row.request.authorId, status: row.request.status } };
   }
-  async acceptAtomically(proposalId: string, requestId: string, ownerId: string, helpingStudentId: string) {
+  async acceptAtomically(input: Parameters<ProposalRepository['acceptAtomically']>[0]) {
     await prisma.$transaction(async tx => {
-      await tx.helpProposal.update({ where: { id: proposalId }, data: { status: 'ACCEPTED' } });
-      await tx.helpProposal.updateMany({ where: { requestId, id: { not: proposalId }, status: 'PENDING' }, data: { status: 'REJECTED' } });
-      await tx.helpRequest.update({ where: { id: requestId }, data: { status: 'HELP_ACCEPTED' } });
-      await tx.studySession.create({ data: { requestId, ownerId, helpingStudentId, date: new Date(Date.now() + 86400000), duration: 60, meetingMode: 'ONLINE', meetingUrl: 'https://meet.google.com/campus-connect' } });
-      await tx.notification.createMany({ data: [
-        { recipientId: helpingStudentId, type: 'PROPOSAL_ACCEPTED', message: 'Your proposal was accepted. A study session is scheduled.' },
-        { recipientId: ownerId, type: 'SESSION_CREATED', message: 'A study session was created for your accepted proposal.' }
-      ] });
+      await tx.helpProposal.update({ where: { id: input.proposalId }, data: { status: 'ACCEPTED' } });
+      await tx.helpProposal.updateMany({ where: { requestId: input.requestId, id: { not: input.proposalId }, status: 'PENDING' }, data: { status: 'REJECTED' } });
+      await tx.helpRequest.update({ where: { id: input.requestId }, data: { status: 'HELP_ACCEPTED' } });
+      await tx.studySession.create({
+        data: {
+          requestId: input.requestId,
+          ownerId: input.ownerId,
+          helpingStudentId: input.helpingStudentId,
+          date: input.sessionDate,
+          duration: input.duration,
+          meetingMode: input.meetingMode,
+          meetingUrl: input.meetingUrl,
+        },
+      });
+      await tx.notification.createMany({ data: input.notifications });
     });
   }
   async findDuplicate(requestId: string, studentId: string) {

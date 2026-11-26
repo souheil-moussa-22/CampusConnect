@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Sparkles } from 'lucide-react';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { signIn } from '@/lib/auth';
+import { signIn } from '@/presentation/auth';
+import { campusApplication, passwordHasher } from '@/presentation/server/services';
 
 export default function Register() {
   return (
@@ -31,15 +30,11 @@ export default function Register() {
           <p className="mt-2 text-sm text-slate-500">A few details and you&apos;re part of the community.</p>
           <form action={async formData => {
             'use server';
-            const name = String(formData.get('name')).trim();
-            const email = String(formData.get('email')).trim().toLowerCase();
+            const name = String(formData.get('name'));
+            const email = String(formData.get('email'));
             const password = String(formData.get('password'));
-            if (name.length < 2 || password.length < 6) throw new Error('Invalid registration');
-            if (await prisma.user.findUnique({ where: { email } })) throw new Error('Email already registered');
-            await prisma.user.create({
-              data: { name, email, passwordHash: await bcrypt.hash(password, 12), profile: { create: {} } },
-            });
-            await signIn('credentials', { email, password, redirectTo: '/dashboard' });
+            await campusApplication.register({ name, email, password }, passwordHasher);
+            await signIn('credentials', { email: email.trim().toLowerCase(), password, redirectTo: '/dashboard' });
           }} className="mt-8 space-y-5">
             <label className="control-label">
               Full name
